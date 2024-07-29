@@ -72,7 +72,7 @@ Miss penalty: ${missPenalty}ns
 Average memory access time: ${averageAccessTime}ns
 Total memory access time: ${tAccessTime}ns
 Cache Memory History:
-${cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.filter(block => block !== null).join(', ')}`).join('\n')}
+${cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.map(block => block === null ? 'null' : block).join(', ')}`).join('\n')}
         `;
         let blob = new Blob([resultText.trim()], { type: 'text/plain' });
         let link = document.createElement('a');
