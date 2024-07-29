@@ -12,23 +12,29 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
 
     let cacheHit = 0;
     let cacheMiss = 0;
-    let currIdx = 0;
     let blocks = new Array(cacheSize).fill(null);
+    let mruIndex = new Array(cacheSize).fill(-1); // To store MRU indices
     let cacheHistory = [];
 
-    programFlow.forEach(elem => {
+    programFlow.forEach((elem, i) => {
         if (blocks.includes(elem)) {
             cacheHit += 1;
-            currIdx = blocks.indexOf(elem);
-        } else { // if miss
+            let idx = blocks.indexOf(elem);
+            mruIndex = updateMRU(mruIndex, idx);
+        } else {
             cacheMiss += 1;
-            if (blocks.includes(null)) { //check other spaces, replace null
-                currIdx = blocks.indexOf(null);
-            }
-            blocks[currIdx] = elem; //if no null, change most recently used block 
+            let replaceIdx = mruIndex.indexOf(-1) !== -1 ? mruIndex.indexOf(-1) : mruIndex[cacheSize - 1];
+            blocks[replaceIdx] = elem;
+            mruIndex = updateMRU(mruIndex, replaceIdx);
         }
         cacheHistory.push([...blocks]);
     });
+
+    function updateMRU(mruIndex, idx) {
+        mruIndex = mruIndex.filter(i => i !== idx);
+        mruIndex.unshift(idx);
+        return mruIndex;
+    }
 
     function calcAveAT() {
         let hitRate = cacheHit / programFlow.length;
@@ -38,8 +44,8 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
 
     let averageAccessTime = calcAveAT();
 
-    function totalAccessTime(){
-        let AccessTime = cacheHit * blockSize * cacheAccessTime + cacheMiss *(cacheAccessTime + blockSize * (cacheAccessTime + memoryAccessTime));
+    function totalAccessTime() {
+        let AccessTime = cacheHit * cacheAccessTime + cacheMiss * missPenalty;
         return AccessTime.toFixed(2);
     }
 
@@ -59,11 +65,19 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
     document.getElementById('downloadBtn').style.display = 'block';
 
     document.getElementById('downloadBtn').onclick = function() {
-        let historyText = cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.join(', ')}`).join('\n');
-        let blob = new Blob([historyText], { type: 'text/plain' });
+        let resultText = `
+Number of cache hits: ${cacheHit}/${programFlow.length}
+Number of cache misses: ${cacheMiss}/${programFlow.length}
+Miss penalty: ${missPenalty}ns
+Average memory access time: ${averageAccessTime}ns
+Total memory access time: ${tAccessTime}ns
+Cache Memory History:
+${cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.filter(block => block !== null).join(', ')}`).join('\n')}
+        `;
+        let blob = new Blob([resultText.trim()], { type: 'text/plain' });
         let link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'cache_history.txt';
+        link.download = 'cache_results.txt';
         link.click();
     };
 });
