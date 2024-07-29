@@ -12,29 +12,23 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
 
     let cacheHit = 0;
     let cacheMiss = 0;
+    let currIdx = 0;
     let blocks = new Array(cacheSize).fill(null);
-    let mruIndex = new Array(cacheSize).fill(-1); // To store MRU indices
     let cacheHistory = [];
 
-    programFlow.forEach((elem, i) => {
+    programFlow.forEach(elem => {
         if (blocks.includes(elem)) {
             cacheHit += 1;
-            let idx = blocks.indexOf(elem);
-            mruIndex = updateMRU(mruIndex, idx);
-        } else {
+            currIdx = blocks.indexOf(elem);
+        } else { // if miss
             cacheMiss += 1;
-            let replaceIdx = mruIndex.indexOf(-1) !== -1 ? mruIndex.indexOf(-1) : mruIndex[cacheSize - 1];
-            blocks[replaceIdx] = elem;
-            mruIndex = updateMRU(mruIndex, replaceIdx);
+            if (blocks.includes(null)) { //check other spaces, replace null
+                currIdx = blocks.indexOf(null);
+            }
+            blocks[currIdx] = elem; //if no null, change most recently used block 
         }
         cacheHistory.push([...blocks]);
     });
-
-    function updateMRU(mruIndex, idx) {
-        mruIndex = mruIndex.filter(i => i !== idx);
-        mruIndex.unshift(idx);
-        return mruIndex;
-    }
 
     function calcAveAT() {
         let hitRate = cacheHit / programFlow.length;
@@ -44,8 +38,8 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
 
     let averageAccessTime = calcAveAT();
 
-    function totalAccessTime() {
-        let AccessTime = cacheHit * cacheAccessTime + cacheMiss * missPenalty;
+    function totalAccessTime(){
+        let AccessTime = cacheHit * blockSize * cacheAccessTime + cacheMiss *(cacheAccessTime + blockSize * (cacheAccessTime + memoryAccessTime));
         return AccessTime.toFixed(2);
     }
 
