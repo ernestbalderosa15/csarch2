@@ -9,7 +9,15 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
     let programFlow = document.getElementById('programFlow').value.split(',').map(Number);
 
     let missPenalty = cacheAccessTime * 2 + memoryAccessTime * blockSize;
-
+    // if MMSize is in words
+    // MMSize = MMSize/blockSize
+    // if cacheSize is in words
+    // cacheSize = cacheSize/blockSize
+    // if programFlow is in words
+    // check if in binary
+    // turn cacheSize into words
+    let word = Math.log2(blockSize);
+    let tag = Math.log2(MMSize) - word;
     let cacheHit = 0;
     let cacheMiss = 0;
     let currIdx = 0;
@@ -27,8 +35,6 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
             cacheMiss += 1;
             if (blocks.includes(null)) {
                 currIdx = blocks.indexOf(null);
-            } else {
-                currIdx = (currIdx + 1) % cacheSize;
             }
             blocks[currIdx] = elem;
         }
@@ -36,7 +42,7 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
         cacheTrace.push({
             seq: elem,
             hit: hit,
-            assignedBlock: currIdx
+            block: currIdx
         });
     });
 
@@ -95,7 +101,7 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
                         <td>${step.seq}</td>
                         <td>${step.hit ? 'Hit' : ''}</td>
                         <td>${step.hit ? '' : 'Miss'}</td>
-                        <td>${step.assignedBlock}</td>
+                        <td>${step.block}</td>
                     </tr>
                 `).join('')}
             </tbody>
