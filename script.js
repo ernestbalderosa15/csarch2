@@ -15,22 +15,29 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
     let currIdx = 0;
     let blocks = new Array(cacheSize).fill(null);
     let cacheHistory = [];
+    let cacheTrace = [];
 
     programFlow.forEach(elem => {
-        let hitOrMiss;
+        let hit = false;
         if (blocks.includes(elem)) {
             cacheHit += 1;
             currIdx = blocks.indexOf(elem);
-            hitOrMiss = 'Hit';
+            hit = true;
         } else {
             cacheMiss += 1;
             if (blocks.includes(null)) {
                 currIdx = blocks.indexOf(null);
+            } else {
+                currIdx = (currIdx + 1) % cacheSize;
             }
             blocks[currIdx] = elem;
-            hitOrMiss = 'Miss';
         }
-        cacheHistory.push({seq: elem, hit: hitOrMiss === 'Hit' ? elem : '', miss: hitOrMiss === 'Miss' ? elem : '', block: hitOrMiss === 'Miss' ? currIdx : ''});
+        cacheHistory.push([...blocks]);
+        cacheTrace.push({
+            seq: elem,
+            hit: hit,
+            assignedBlock: currIdx
+        });
     });
 
     function calcAveAT() {
@@ -41,9 +48,9 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
 
     let averageAccessTime = calcAveAT();
 
-    function totalAccessTime(){
-        let AccessTime = cacheHit * blockSize * cacheAccessTime + cacheMiss *(cacheAccessTime + blockSize * (cacheAccessTime + memoryAccessTime));
-        return AccessTime.toFixed(2);
+    function totalAccessTime() {
+        let accessTime = cacheHit * blockSize * cacheAccessTime + cacheMiss * (cacheAccessTime + blockSize * (cacheAccessTime + memoryAccessTime));
+        return accessTime.toFixed(2);
     }
 
     let tAccessTime = totalAccessTime();
@@ -54,8 +61,26 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
         <p>Miss penalty: ${missPenalty}ns</p>
         <p>Average memory access time: ${averageAccessTime}ns</p>
         <p>Total memory access time: ${tAccessTime}ns</p>
-        <h3>Cache Memory History:</h3>
-        <table>
+        <h3>Snapshot of the cache memory:</h3>
+        <table border="1">
+            <tr>
+                <th>Block</th>
+                <th>Data</th>
+            </tr>
+    `;
+    for (let i = 0; i < blocks.length; i++) {
+        output += `
+            <tr>
+                <td>${i}</td>
+                <td>${blocks[i] !== null ? blocks[i] : ' '}</td>
+            </tr>
+        `;
+    }
+    output += `</table>`;
+
+    let trace_output = `
+        <h3>Cache Memory Trace:</h3>
+        <table border="1">
             <thead>
                 <tr>
                     <th>Sequence</th>
@@ -65,19 +90,43 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
                 </tr>
             </thead>
             <tbody>
-                ${cacheHistory.map(step => `
+                ${cacheTrace.map(step => `
                     <tr>
                         <td>${step.seq}</td>
-                        <td>${step.hit}</td>
-                        <td>${step.miss}</td>
-                        <td>${step.block}</td>
+                        <td>${step.hit ? 'Hit' : ''}</td>
+                        <td>${step.hit ? '' : 'Miss'}</td>
+                        <td>${step.assignedBlock}</td>
                     </tr>
                 `).join('')}
             </tbody>
         </table>
     `;
 
+    let history_output = `<h3>Cache Memory History:</h3>`;
+    for (let i = 0; i < cacheHistory.length; i++) {
+        history_output += `
+            <p>Iteration ${i + 1}</p>
+            <table border="1">
+                <tr>
+                    <th>Block</th>
+                    <th>Data</th>
+                </tr>
+        `;
+        for (let j = 0; j < cacheHistory[i].length; j++) {
+            history_output += `
+                <tr>
+                    <td>${j}</td>
+                    <td>${cacheHistory[i][j] !== null ? cacheHistory[i][j] : ' '}</td>
+                </tr>
+            `;
+        }
+        history_output += `</table>`;
+    }
+
     document.getElementById('output').innerHTML = output;
+    document.getElementById('history').innerHTML = history_output;
+    document.getElementById('trace').innerHTML = trace_output;
+
     document.getElementById('downloadBtn').style.display = 'block';
 
     document.getElementById('downloadBtn').onclick = function() {
@@ -87,9 +136,9 @@ Number of cache misses: ${cacheMiss}/${programFlow.length}
 Miss penalty: ${missPenalty}ns
 Average memory access time: ${averageAccessTime}ns
 Total memory access time: ${tAccessTime}ns
-Cache Memory History:
-Seq\tHit\tMiss\tBlock
-${cacheHistory.map(step => `${step.seq}\t${step.hit}\t${step.miss}\t${step.block}`).join('\n')}
+Cache Memory Snapshot:
+Block\tData
+${blocks.map((data, index) => `${index}\t${data !== null ? data : ' '}`).join('\n')}
         `;
         let blob = new Blob([resultText.trim()], { type: 'text/plain' });
         let link = document.createElement('a');
