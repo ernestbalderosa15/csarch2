@@ -17,17 +17,20 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
     let cacheHistory = [];
 
     programFlow.forEach(elem => {
+        let hitOrMiss;
         if (blocks.includes(elem)) {
             cacheHit += 1;
             currIdx = blocks.indexOf(elem);
-        } else { // if miss
+            hitOrMiss = 'Hit';
+        } else {
             cacheMiss += 1;
-            if (blocks.includes(null)) { //check other spaces, replace null
+            if (blocks.includes(null)) {
                 currIdx = blocks.indexOf(null);
             }
-            blocks[currIdx] = elem; //if no null, change most recently used block 
+            blocks[currIdx] = elem;
+            hitOrMiss = 'Miss';
         }
-        cacheHistory.push([...blocks]);
+        cacheHistory.push({seq: elem, hit: hitOrMiss === 'Hit' ? elem : '', miss: hitOrMiss === 'Miss' ? elem : '', block: hitOrMiss === 'Miss' ? currIdx : ''});
     });
 
     function calcAveAT() {
@@ -52,7 +55,26 @@ document.getElementById('cacheForm').addEventListener('submit', function(event) 
         <p>Average memory access time: ${averageAccessTime}ns</p>
         <p>Total memory access time: ${tAccessTime}ns</p>
         <h3>Cache Memory History:</h3>
-        <pre>${JSON.stringify(cacheHistory, null, 2)}</pre>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sequence</th>
+                    <th>Hit</th>
+                    <th>Miss</th>
+                    <th>Block</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${cacheHistory.map(step => `
+                    <tr>
+                        <td>${step.seq}</td>
+                        <td>${step.hit}</td>
+                        <td>${step.miss}</td>
+                        <td>${step.block}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
     `;
 
     document.getElementById('output').innerHTML = output;
@@ -66,7 +88,8 @@ Miss penalty: ${missPenalty}ns
 Average memory access time: ${averageAccessTime}ns
 Total memory access time: ${tAccessTime}ns
 Cache Memory History:
-${cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.map(block => block === null ? 'null' : block).join(', ')}`).join('\n')}
+Seq\tHit\tMiss\tBlock
+${cacheHistory.map(step => `${step.seq}\t${step.hit}\t${step.miss}\t${step.block}`).join('\n')}
         `;
         let blob = new Blob([resultText.trim()], { type: 'text/plain' });
         let link = document.createElement('a');
@@ -74,4 +97,10 @@ ${cacheHistory.map((step, index) => `Iteration ${index + 1}: ${step.map(block =>
         link.download = 'cache_results.txt';
         link.click();
     };
+});
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+    document.getElementById('cacheForm').reset();
+    document.getElementById('output').innerHTML = '';
+    document.getElementById('downloadBtn').style.display = 'none';
 });
