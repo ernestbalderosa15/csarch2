@@ -156,18 +156,21 @@ ${cacheHistory.map((snapshot, iteration) => `Iteration ${iteration + 1}\nBlock\t
             };
 
             // Add "Scroll to the Top" button
-            let scrollTopBtn = document.createElement('button');
-            scrollTopBtn.textContent = 'Scroll to the Top';
-            scrollTopBtn.onclick = function() {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-            scrollTopBtn.id = 'scrollTopBtn';  // Added ID for easy removal
-            document.body.appendChild(scrollTopBtn);
-            scrollTopBtn.style.display = 'block';
-            scrollTopBtn.style.margin = '20px auto';
-            scrollTopBtn.style.padding = '10px 20px';
-            scrollTopBtn.style.fontSize = '16px';
-            scrollTopBtn.style.cursor = 'pointer';
+            let existingScrollTopBtn = document.getElementById('scrollTopBtn');
+            if (!existingScrollTopBtn) {
+                let scrollTopBtn = document.createElement('button');
+                scrollTopBtn.textContent = 'Scroll to the Top';
+                scrollTopBtn.onclick = function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                scrollTopBtn.id = 'scrollTopBtn';  // Added ID for easy removal
+                document.body.appendChild(scrollTopBtn);
+                scrollTopBtn.style.display = 'block';
+                scrollTopBtn.style.margin = '20px auto';
+                scrollTopBtn.style.padding = '10px 20px';
+                scrollTopBtn.style.fontSize = '16px';
+                scrollTopBtn.style.cursor = 'pointer';
+            }
 
             return;
         }
